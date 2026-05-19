@@ -1013,21 +1013,32 @@ let products = JSON.parse(localStorage.getItem('heystore_products') || 'null') |
 let currentSection = 'all';
 let nextId = Math.max(...products.map(p => p.id)) + 1;
 
+const _imgData = {};
+
 function fileToUrl(input, targetId, previewId) {
   const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    document.getElementById(targetId).value = e.target.result;
+    const data = e.target.result;
+    _imgData[targetId] = data;
+    // Also set in input for fallback
+    try { document.getElementById(targetId).value = data; } catch(e) {}
     const preview = document.getElementById(previewId);
-    preview.src = e.target.result;
-    preview.style.display = 'block';
+    if (preview) { preview.src = data; preview.style.display = 'block'; }
   };
   reader.readAsDataURL(file);
 }
 
+function getImgValue(inputId) {
+  // Prefer stored base64 over input value (safer on mobile)
+  if (_imgData[inputId]) return _imgData[inputId];
+  const el = document.getElementById(inputId);
+  return el ? el.value.trim() : '';
+}
+
 function saveLogo() {
-  const url = document.getElementById('logo-url').value.trim();
+  const url = getImgValue('logo-url');
   if (!url) return;
   localStorage.setItem('heystore_logo', url);
   applyLogo(url);
@@ -1307,7 +1318,7 @@ function addProduct() {
     sub: document.getElementById('new-sub').value.trim(),
     cat: document.getElementById('new-cat').value,
     price,
-    img: document.getElementById('new-img').value.trim(),
+    img: getImgValue('new-img'),
     condition: document.getElementById('new-condition').value,
     notes: document.getElementById('new-notes').value.trim(),
     inStock: true,
@@ -1315,6 +1326,8 @@ function addProduct() {
 
   save(); renderAdminList(); renderProducts(); showToast('PRODUCTO AGREGADO');
   ['new-name','new-sub','new-price','new-img','new-notes'].forEach(id => document.getElementById(id).value = '');
+  delete _imgData['new-img'];
+  document.getElementById('new-img-preview').style.display = 'none';
 }
 
 // Edit
@@ -1346,10 +1359,11 @@ function saveEdit() {
   p.sub = document.getElementById('edit-sub').value.trim();
   p.cat = document.getElementById('edit-cat').value;
   p.price = parseFloat(document.getElementById('edit-price').value);
-  p.img = document.getElementById('edit-img').value.trim();
+  p.img = getImgValue('edit-img');
   p.condition = document.getElementById('edit-condition').value;
   p.notes = document.getElementById('edit-notes').value.trim();
   save(); renderAdminList(); renderProducts(); closeEdit(); showToast('CAMBIOS GUARDADOS');
+  delete _imgData['edit-img'];
 }
 
 function showToast(msg) {
