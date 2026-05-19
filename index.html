@@ -14,9 +14,9 @@
 <style>
   :root {
     --black: #0a0a0a;
-    --yellow: #FFD700;
-    --yellow-dark: #e6c200;
-    --red: #cc0000;
+    --yellow: #FFC200;
+    --yellow-dark: #e6a800;
+    --red: #E8001A;
     --blue: #1a56db;
     --white: #f5f5f5;
     --gray: #1a1a1a;
@@ -669,6 +669,55 @@
   .cart-empty { text-align: center; padding: 3rem 1rem; color: #444; }
   .cart-empty p { font-family: 'Bebas Neue', sans-serif; letter-spacing: 2px; font-size: 1.1rem; }
 
+
+  /* ── BRICK SIDE DECORATORS ── */
+  .catalog-wrapper {
+    position: relative;
+    padding: 0 60px;
+  }
+
+  .brick-col {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 44px;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+  }
+  .brick-col.left { left: 0; }
+  .brick-col.right { right: 0; }
+
+  .brick-col-unit {
+    width: 44px;
+    flex: 1;
+    background: var(--yellow);
+    position: relative;
+    min-height: 60px;
+    margin-bottom: 3px;
+  }
+  .brick-col-unit::before,
+  .brick-col-unit::after {
+    content: '';
+    position: absolute;
+    left: 6px;
+    width: 32px;
+    height: 14px;
+    background: var(--yellow);
+    border-radius: 4px 4px 0 0;
+  }
+  .brick-col-unit::before { top: -11px; }
+  .brick-col-unit::after { display: none; }
+
+  .brick-col.right .brick-col-unit::before {
+    left: 6px;
+  }
+
+  @media (max-width: 900px) {
+    .catalog-wrapper { padding: 0; }
+    .brick-col { display: none; }
+  }
+
   @media (max-width: 600px) {
     .nav-links { display: none; }
     .products-grid { grid-template-columns: 1fr 1fr; gap: 1rem; }
@@ -681,14 +730,10 @@
 <!-- NAV -->
 <nav>
   <a href="#" class="nav-logo" onclick="showSection('all')">
-    <svg class="logo-svg" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+    <img id="navLogo" src="" alt="HEY!" class="logo-svg" style="object-fit:contain;border-radius:4px;" onerror="this.style.display='none';document.getElementById('navLogoBrick').style.display='block'">
+    <svg id="navLogoBrick" class="logo-svg" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" style="display:block;">
       <rect width="48" height="48" fill="#0a0a0a"/>
-      <!-- Brick studs -->
-      <rect x="4" y="10" width="10" height="8" rx="3" fill="#FFD700"/>
-      <rect x="19" y="10" width="10" height="8" rx="3" fill="#FFD700"/>
-      <rect x="34" y="10" width="10" height="8" rx="3" fill="#FFD700"/>
-      <!-- Brick body -->
-      <rect x="2" y="16" width="44" height="18" rx="1" fill="#FFD700"/>
+      <text x="24" y="32" font-family="Arial Black,sans-serif" font-size="18" font-weight="900" fill="#FFC200" text-anchor="middle">HEY!</text>
     </svg>
   </a>
   <ul class="nav-links">
@@ -737,8 +782,30 @@
 </div>
 
 <!-- STORE -->
+<div class="catalog-wrapper">
+  <div class="brick-col left">
+    <div class="brick-col-unit"></div>
+    <div class="brick-col-unit"></div>
+    <div class="brick-col-unit"></div>
+    <div class="brick-col-unit"></div>
+    <div class="brick-col-unit"></div>
+    <div class="brick-col-unit"></div>
+    <div class="brick-col-unit"></div>
+    <div class="brick-col-unit"></div>
+  </div>
+  <div class="brick-col right">
+    <div class="brick-col-unit"></div>
+    <div class="brick-col-unit"></div>
+    <div class="brick-col-unit"></div>
+    <div class="brick-col-unit"></div>
+    <div class="brick-col-unit"></div>
+    <div class="brick-col-unit"></div>
+    <div class="brick-col-unit"></div>
+    <div class="brick-col-unit"></div>
+  </div>
 <div class="store-section">
   <div id="products-container"></div>
+</div>
 </div>
 
 <!-- FOOTER -->
@@ -802,8 +869,15 @@
           </div>
           <div class="add-form-row full">
             <div class="form-group">
-              <label class="form-label">URL de imagen</label>
-              <input type="text" class="form-input" id="new-img" placeholder="https://...">
+              <label class="form-label">Imagen (URL o archivo)</label>
+              <input type="text" class="form-input" id="new-img" placeholder="https://... o usa el botón">
+              <div style="display:flex;gap:8px;margin-top:6px;align-items:center;">
+                <label style="background:#333;border:1px solid #444;color:var(--white);padding:7px 14px;font-size:0.78rem;cursor:pointer;letter-spacing:1px;font-family:DM Sans,sans-serif;">
+                  📁 SUBIR ARCHIVO
+                  <input type="file" accept="image/*" style="display:none;" onchange="fileToUrl(this,'new-img','new-img-preview')">
+                </label>
+                <img id="new-img-preview" src="" style="display:none;width:48px;height:48px;object-fit:cover;border:1px solid #333;">
+              </div>
             </div>
           </div>
           <div class="add-form-row">
@@ -828,6 +902,23 @@
       <div>
         <div class="admin-section-title">PRODUCTOS EN CATÁLOGO</div>
         <div class="product-list-admin" id="adminProductList"></div>
+      </div>
+
+      <!-- Logo -->
+      <div>
+        <div class="admin-section-title">LOGO DEL NAV</div>
+        <div class="form-group">
+          <label class="form-label">Imagen del logo (URL o archivo)</label>
+          <input type="text" class="form-input" id="logo-url" placeholder="https://... pega URL del logo HEY!">
+          <div style="display:flex;gap:8px;margin-top:6px;align-items:center;">
+            <label style="background:#333;border:1px solid #444;color:var(--white);padding:7px 14px;font-size:0.78rem;cursor:pointer;letter-spacing:1px;font-family:DM Sans,sans-serif;">
+              📁 SUBIR ARCHIVO
+              <input type="file" accept="image/*" style="display:none;" onchange="fileToUrl(this,'logo-url','logo-preview')">
+            </label>
+            <img id="logo-preview" src="" style="display:none;width:48px;height:48px;object-fit:contain;border:1px solid #333;background:#000;">
+          </div>
+          <button class="form-btn" style="margin-top:8px;" onclick="saveLogo()">GUARDAR LOGO</button>
+        </div>
       </div>
 
       <!-- Logout -->
@@ -871,8 +962,15 @@
       </div>
       <div class="add-form-row full">
         <div class="form-group">
-          <label class="form-label">URL de imagen</label>
+          <label class="form-label">Imagen (URL o archivo)</label>
           <input type="text" class="form-input" id="edit-img">
+          <div style="display:flex;gap:8px;margin-top:6px;align-items:center;">
+            <label style="background:#333;border:1px solid #444;color:var(--white);padding:7px 14px;font-size:0.78rem;cursor:pointer;letter-spacing:1px;font-family:DM Sans,sans-serif;">
+              📁 SUBIR ARCHIVO
+              <input type="file" accept="image/*" style="display:none;" onchange="fileToUrl(this,'edit-img','edit-img-preview')">
+            </label>
+            <img id="edit-img-preview" src="" style="display:none;width:48px;height:48px;object-fit:cover;border:1px solid #333;">
+          </div>
         </div>
       </div>
       <div class="add-form-row">
@@ -914,6 +1012,37 @@ let products = JSON.parse(localStorage.getItem('heystore_products') || 'null') |
 
 let currentSection = 'all';
 let nextId = Math.max(...products.map(p => p.id)) + 1;
+
+function fileToUrl(input, targetId, previewId) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById(targetId).value = e.target.result;
+    const preview = document.getElementById(previewId);
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function saveLogo() {
+  const url = document.getElementById('logo-url').value.trim();
+  if (!url) return;
+  localStorage.setItem('heystore_logo', url);
+  applyLogo(url);
+  showToast('LOGO GUARDADO');
+}
+
+function applyLogo(url) {
+  const img = document.getElementById('navLogo');
+  const brick = document.getElementById('navLogoBrick');
+  if (url) {
+    img.src = url;
+    img.style.display = 'block';
+    brick.style.display = 'none';
+  }
+}
 
 function save() {
   localStorage.setItem('heystore_products', JSON.stringify(products));
@@ -1121,6 +1250,12 @@ function checkLogin() {
 }
 
 function showAdminPanel() {
+  const savedLogo = localStorage.getItem('heystore_logo');
+  if (savedLogo) {
+    document.getElementById('logo-url').value = savedLogo;
+    const prev = document.getElementById('logo-preview');
+    prev.src = savedLogo; prev.style.display = 'block';
+  }
   document.getElementById('loginSection').style.display = 'none';
   const panel = document.getElementById('adminPanel');
   panel.classList.add('visible');
@@ -1231,6 +1366,8 @@ document.getElementById('adminModal').addEventListener('click', e => {
 
 // Init
 renderProducts();
+const savedLogo = localStorage.getItem('heystore_logo');
+if (savedLogo) applyLogo(savedLogo);
 </script>
 </body>
 </html>
