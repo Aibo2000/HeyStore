@@ -995,27 +995,61 @@
 <!-- TOAST -->
 <div class="success-toast" id="toast">✓ GUARDADO</div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDAXykKgjNBLKppBjcvULtP0kHxPJxR13U",
+  authDomain: "heystore-ac08b.firebaseapp.com",
+  projectId: "heystore-ac08b",
+  storageBucket: "heystore-ac08b.firebasestorage.app",
+  messagingSenderId: "230289832214",
+  appId: "1:230289832214:web:f473b533a969dc484ff837"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
 const WA_NUMBER = '5218671234567'; // ← CAMBIA POR TU NÚMERO
 
-const ADMIN_PASS = 'heyadmin2026';
-
-let products = JSON.parse(localStorage.getItem('heystore_products') || 'null') || [
-  { id: 1, name: 'CMF Marvel Serie 2', sub: 'Wolverine (x2)', cat: 'minifiguras', price: 150, img: '', condition: 'Nuevo', notes: '', inStock: true },
-  { id: 2, name: 'CMF Marvel Serie 2', sub: 'Goliath', cat: 'minifiguras', price: 150, img: '', condition: 'Nuevo', notes: 'Caja abierta solo para identificar', inStock: true },
-  { id: 3, name: 'CMF Serie 25', sub: 'Triceratops', cat: 'minifiguras', price: 150, img: '', condition: 'Nuevo', notes: 'Identificada con Brick Search', inStock: true },
-  { id: 4, name: 'LEGO Avatar 75576', sub: 'Skimwing Adventure · 259 pzs', cat: 'sets', price: 700, img: '', condition: 'Nuevo', notes: '', inStock: true },
-  { id: 5, name: 'LEGO Star Wars 75338', sub: 'Ambush on Ferrix · 679 pzs', cat: 'sets', price: 1600, img: '', condition: 'Nuevo', notes: '', inStock: true },
-  { id: 6, name: 'LEGO DC 30653', sub: 'Batman 1992 · Polybag · 40 pzs', cat: 'sets', price: 200, img: '', condition: 'Nuevo', notes: '', inStock: true },
-  { id: 7, name: 'LEGO Marvel 30652', sub: 'Portal de Doctor Strange · 44 pzs', cat: 'sets', price: 200, img: '', condition: 'Nuevo', notes: '', inStock: true },
-];
-
+let products = [];
 let currentSection = 'all';
-let nextId = Math.max(...products.map(p => p.id)) + 1;
+let nextId = 1;
+
+// Cargar productos desde Firestore
+async function loadProducts() {
+  try {
+    const snap = await getDocs(collection(db, 'products'));
+    products = [];
+    snap.forEach(d => products.push({ firestoreId: d.id, ...d.data() }));
+    if (products.length === 0) {
+      const inicial = [
+        { id: 1, name: 'CMF Marvel Serie 2', sub: 'Wolverine (x2)', cat: 'minifiguras', price: 150, img: '', condition: 'Nuevo', notes: '', inStock: true },
+        { id: 2, name: 'CMF Marvel Serie 2', sub: 'Goliath', cat: 'minifiguras', price: 150, img: '', condition: 'Nuevo', notes: 'Caja abierta solo para identificar', inStock: true },
+        { id: 3, name: 'CMF Serie 25', sub: 'Triceratops', cat: 'minifiguras', price: 150, img: '', condition: 'Nuevo', notes: 'Identificada con Brick Search', inStock: true },
+        { id: 4, name: 'LEGO Avatar 75576', sub: 'Skimwing Adventure · 259 pzs', cat: 'sets', price: 700, img: '', condition: 'Nuevo', notes: '', inStock: true },
+        { id: 5, name: 'LEGO Star Wars 75338', sub: 'Ambush on Ferrix · 679 pzs', cat: 'sets', price: 1600, img: '', condition: 'Nuevo', notes: '', inStock: true },
+        { id: 6, name: 'LEGO DC 30653', sub: 'Batman 1992 · Polybag · 40 pzs', cat: 'sets', price: 200, img: '', condition: 'Nuevo', notes: '', inStock: true },
+        { id: 7, name: 'LEGO Marvel 30652', sub: 'Portal de Doctor Strange · 44 pzs', cat: 'sets', price: 200, img: '', condition: 'Nuevo', notes: '', inStock: true },
+      ];
+      for (const p of inicial) {
+        const ref = await addDoc(collection(db, 'products'), p);
+        products.push({ firestoreId: ref.id, ...p });
+      }
+    }
+    nextId = Math.max(...products.map(p => p.id), 0) + 1;
+    renderProducts();
+  } catch(e) { console.error('Error cargando productos:', e); }
+}
+
+async function save() { /* Firestore guarda directo en cada función */ }
 
 const _imgData = {};
 
-function fileToUrl(input, targetId, previewId) {
+window.fileToUrl = function(input, targetId, previewId) {
   const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
@@ -1037,7 +1071,7 @@ function getImgValue(inputId) {
   return el ? el.value.trim() : '';
 }
 
-function saveLogo() {
+window.saveLogo = function() {
   const url = getImgValue('logo-url');
   if (!url) return;
   localStorage.setItem('heystore_logo', url);
@@ -1055,10 +1089,6 @@ function applyLogo(url) {
   }
 }
 
-function save() {
-  localStorage.setItem('heystore_products', JSON.stringify(products));
-}
-
 const MSN_ID = '61554273780974';
 
 function waLink(product) {
@@ -1074,7 +1104,7 @@ function msnLink(product) {
 // ── CART ──
 let cart = [];
 
-function addToCart(id) {
+window.addToCart = function(id) {
   const p = products.find(x => x.id === id);
   if (!p || !p.inStock) return;
   const existing = cart.find(x => x.id === id);
@@ -1106,13 +1136,13 @@ function updateCartCount() {
   el.classList.toggle('visible', total > 0);
 }
 
-function openCart() {
+window.openCart = function() {
   renderCart();
   document.getElementById('cartDrawer').classList.add('open');
   document.getElementById('cartOverlay').classList.add('open');
 }
 
-function closeCart() {
+window.closeCart = function() {
   document.getElementById('cartDrawer').classList.remove('open');
   document.getElementById('cartOverlay').classList.remove('open');
 }
@@ -1188,7 +1218,7 @@ function productCard(p) {
     </div>`;
 }
 
-function renderProducts() {
+window.renderProducts = function() {
   const container = document.getElementById('products-container');
   const filtered = currentSection === 'all'
     ? products
@@ -1241,21 +1271,27 @@ function showSection(section) {
 // ── ADMIN ──
 let adminLoggedIn = false;
 
-function openAdmin() {
+onAuthStateChanged(auth, user => {
+  adminLoggedIn = !!user;
+});
+
+window.openAdmin = function() {
   document.getElementById('adminModal').classList.add('open');
   if (adminLoggedIn) showAdminPanel();
 }
 
-function closeAdmin() {
+window.closeAdmin = function() {
   document.getElementById('adminModal').classList.remove('open');
 }
 
-function checkLogin() {
-  const val = document.getElementById('adminPassword').value;
-  if (val === ADMIN_PASS) {
+window.checkLogin = async function() {
+  const email = 'isaib1973@gmail.com';
+  const pass = document.getElementById('adminPassword').value;
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
     adminLoggedIn = true;
     showAdminPanel();
-  } else {
+  } catch(e) {
     document.getElementById('loginError').style.display = 'block';
   }
 }
@@ -1273,7 +1309,8 @@ function showAdminPanel() {
   renderAdminList();
 }
 
-function logout() {
+window.logout = async function() {
+  await signOut(auth);
   adminLoggedIn = false;
   document.getElementById('adminPanel').classList.remove('visible');
   document.getElementById('loginSection').style.display = 'flex';
@@ -1281,7 +1318,7 @@ function logout() {
   closeAdmin();
 }
 
-function renderAdminList() {
+window.renderAdminList = function() {
   const list = document.getElementById('adminProductList');
   list.innerHTML = products.map(p => `
     <div class="product-admin-row">
@@ -1296,23 +1333,29 @@ function renderAdminList() {
     </div>`).join('');
 }
 
-function toggleStock(id) {
+window.toggleStock = async function(id) {
   const p = products.find(x => x.id === id);
-  if (p) { p.inStock = !p.inStock; save(); renderAdminList(); renderProducts(); }
+  if (!p) return;
+  p.inStock = !p.inStock;
+  const { firestoreId, ...data } = p;
+  await updateDoc(doc(db, 'products', firestoreId), { inStock: p.inStock });
+  renderAdminList(); renderProducts();
 }
 
-function deleteProduct(id) {
+window.deleteProduct = async function(id) {
   if (!confirm('¿Eliminar este producto?')) return;
-  products = products.filter(p => p.id !== id);
-  save(); renderAdminList(); renderProducts();
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  await deleteDoc(doc(db, 'products', p.firestoreId));
+  products = products.filter(x => x.id !== id);
+  renderAdminList(); renderProducts();
 }
 
-function addProduct() {
+window.addProduct = async function() {
   const name = document.getElementById('new-name').value.trim();
   const price = parseFloat(document.getElementById('new-price').value);
   if (!name || isNaN(price)) { alert('Nombre y precio son obligatorios.'); return; }
-
-  products.push({
+  const newP = {
     id: nextId++,
     name,
     sub: document.getElementById('new-sub').value.trim(),
@@ -1322,9 +1365,10 @@ function addProduct() {
     condition: document.getElementById('new-condition').value,
     notes: document.getElementById('new-notes').value.trim(),
     inStock: true,
-  });
-
-  save(); renderAdminList(); renderProducts(); showToast('PRODUCTO AGREGADO');
+  };
+  const ref = await addDoc(collection(db, 'products'), newP);
+  products.push({ firestoreId: ref.id, ...newP });
+  renderAdminList(); renderProducts(); showToast('PRODUCTO AGREGADO');
   ['new-name','new-sub','new-price','new-img','new-notes'].forEach(id => document.getElementById(id).value = '');
   delete _imgData['new-img'];
   document.getElementById('new-img-preview').style.display = 'none';
@@ -1333,7 +1377,7 @@ function addProduct() {
 // Edit
 let editingId = null;
 
-function openEdit(id) {
+window.openEdit = function(id) {
   const p = products.find(x => x.id === id);
   if (!p) return;
   editingId = id;
@@ -1347,12 +1391,12 @@ function openEdit(id) {
   document.getElementById('editModal').classList.add('open');
 }
 
-function closeEdit() {
+window.closeEdit = function() {
   document.getElementById('editModal').classList.remove('open');
   editingId = null;
 }
 
-function saveEdit() {
+window.saveEdit = async function() {
   const p = products.find(x => x.id === editingId);
   if (!p) return;
   p.name = document.getElementById('edit-name').value.trim();
@@ -1362,11 +1406,13 @@ function saveEdit() {
   p.img = getImgValue('edit-img');
   p.condition = document.getElementById('edit-condition').value;
   p.notes = document.getElementById('edit-notes').value.trim();
-  save(); renderAdminList(); renderProducts(); closeEdit(); showToast('CAMBIOS GUARDADOS');
+  const { firestoreId, ...data } = p;
+  await updateDoc(doc(db, 'products', firestoreId), data);
+  renderAdminList(); renderProducts(); closeEdit(); showToast('CAMBIOS GUARDADOS');
   delete _imgData['edit-img'];
 }
 
-function showToast(msg) {
+window.showToast = function(msg) {
   const t = document.getElementById('toast');
   t.textContent = '✓ ' + msg;
   t.classList.add('show');
@@ -1379,7 +1425,7 @@ document.getElementById('adminModal').addEventListener('click', e => {
 });
 
 // Init
-renderProducts();
+loadProducts();
 const savedLogo = localStorage.getItem('heystore_logo');
 if (savedLogo) applyLogo(savedLogo);
 </script>
