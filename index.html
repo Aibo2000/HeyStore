@@ -1115,13 +1115,13 @@ window.addToCart = function(id) {
   showToast('AGREGADO AL CARRITO');
 }
 
-function removeFromCart(id) {
+window.removeFromCart = function(id) {
   cart = cart.filter(x => x.id !== id);
   updateCartCount();
   renderCart();
 }
 
-function changeQty(id, delta) {
+window.changeQty = function(id, delta) {
   const item = cart.find(x => x.id === id);
   if (!item) return;
   item.qty += delta;
@@ -1129,7 +1129,7 @@ function changeQty(id, delta) {
   else { updateCartCount(); renderCart(); }
 }
 
-function updateCartCount() {
+window.updateCartCount = function() {
   const total = cart.reduce((s, x) => s + x.qty, 0);
   const el = document.getElementById('cartCount');
   el.textContent = total;
@@ -1147,7 +1147,7 @@ window.closeCart = function() {
   document.getElementById('cartOverlay').classList.remove('open');
 }
 
-function renderCart() {
+window.renderCart = function() {
   const itemsEl = document.getElementById('cartItems');
   const footerEl = document.getElementById('cartFooter');
   if (cart.length === 0) {
@@ -1258,7 +1258,7 @@ window.renderProducts = function() {
   }
 }
 
-function showSection(section) {
+window.showSection = function(section) {
   currentSection = section;
   // Update nav
   ['all','minifiguras','sets','piezas'].forEach(s => {
@@ -1296,7 +1296,7 @@ window.checkLogin = async function() {
   }
 }
 
-function showAdminPanel() {
+window.showAdminPanel = function() {
   const savedLogo = localStorage.getItem('heystore_logo');
   if (savedLogo) {
     document.getElementById('logo-url').value = savedLogo;
